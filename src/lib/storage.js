@@ -1,12 +1,17 @@
-
 import { db } from "@/lib/firebase";
-import { collection, addDoc, getDocs, updateDoc, doc, query, orderBy, serverTimestamp, getDoc } from "firebase/firestore";
+import { collection, addDoc, getDocs, updateDoc, doc, query, orderBy, serverTimestamp, getDoc, where, deleteDoc } from "firebase/firestore";
 
 const COLLECTION_NAME = "videos";
 
-export async function getVideos() {
+export async function getVideos(userId) {
     try {
-        const q = query(collection(db, COLLECTION_NAME), orderBy("createdAt", "desc"));
+        if (!userId) return [];
+
+        const q = query(
+            collection(db, COLLECTION_NAME),
+            where("userId", "==", userId),
+            orderBy("createdAt", "desc")
+        );
         const querySnapshot = await getDocs(q);
 
         let videos = querySnapshot.docs.map(doc => ({
@@ -14,7 +19,6 @@ export async function getVideos() {
             ...doc.data()
         }));
 
-        // No client-side simulation needed anymore as we use the API
         return videos;
     } catch (error) {
         console.error("Error fetching videos:", error);
@@ -22,16 +26,17 @@ export async function getVideos() {
     }
 }
 
-export async function addVideo(video) {
+export async function addVideo(video, userId) {
     try {
         const newVideo = {
             ...video,
-            createdAt: Date.now(), // Use client timestamp for simplicity in simulation logic
+            userId,
+            createdAt: Date.now(),
             status: 'processing',
             views: '0',
             duration: '--:--',
             thumbnail: 'bg-gradient-to-br from-primary/20 to-secondary',
-            shorts: [] // Initialize empty shorts array
+            shorts: []
         };
 
         const docRef = await addDoc(collection(db, COLLECTION_NAME), newVideo);
@@ -81,6 +86,17 @@ export async function updateShorts(videoId, shorts) {
         });
     } catch (error) {
         console.error("Error updating shorts:", error);
+        throw error;
+    }
+}
+
+export async function deleteVideo(videoId) {
+    try {
+        const videoRef = doc(db, COLLECTION_NAME, videoId);
+        await deleteDoc(videoRef);
+        return true;
+    } catch (error) {
+        console.error("Error deleting video:", error);
         throw error;
     }
 }

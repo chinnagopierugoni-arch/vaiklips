@@ -4,22 +4,37 @@ import { useState, useEffect } from "react";
 import HeroScene from "@/components/3d/HeroScene";
 import Button from "@/components/ui/Button";
 import { motion } from "framer-motion";
-import { Play, Download, Share2, MoreVertical, Plus, Loader2 } from "lucide-react";
+import { Play, Download, Share2, MoreVertical, Plus, Loader2, Trash2 } from "lucide-react";
 import Link from "next/link";
 import VideoPlayerModal from "@/components/ui/VideoPlayerModal";
 import { getVideos } from "@/lib/storage";
 import { useRouter } from "next/navigation";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 export default function DashboardPage() {
     const [videos, setVideos] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedVideo, setSelectedVideo] = useState(null);
+    const [user, setUser] = useState(null);
     const router = useRouter();
 
     useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+            setUser(currentUser);
+            if (!currentUser) {
+                router.push("/login?message=Please log in to access your dashboard.");
+            }
+        });
+        return () => unsubscribe();
+    }, [router]);
+
+    useEffect(() => {
+        if (!user) return;
+
         const fetchVideos = async () => {
             try {
-                const data = await getVideos();
+                const data = await getVideos(user.uid);
                 setVideos(data);
             } catch (error) {
                 console.error("Failed to fetch videos", error);
@@ -33,7 +48,21 @@ export default function DashboardPage() {
         // Poll for updates every 5 seconds
         const interval = setInterval(fetchVideos, 5000);
         return () => clearInterval(interval);
-    }, []);
+    }, [user]);
+
+    const handleDeleteVideo = async (e, videoId) => {
+        e.stopPropagation();
+        if (!confirm("Are you sure you want to delete this project?")) return;
+
+        try {
+            const { deleteVideo } = await import("@/lib/storage");
+            await deleteVideo(videoId);
+            setVideos(videos.filter(v => v.id !== videoId));
+        } catch (error) {
+            console.error("Failed to delete video", error);
+            alert("Failed to delete video. Please try again.");
+        }
+    };
 
     return (
         <div className="relative min-h-screen pt-24 px-6 md:px-12 pb-20">
@@ -129,8 +158,12 @@ export default function DashboardPage() {
                                         <h3 className="font-bold text-sm truncate pr-2">{video.title}</h3>
                                         <p className="text-xs text-gray-400 capitalize">{video.status === 'completed' ? `${video.views} views` : video.status}</p>
                                     </div>
-                                    <button className="text-gray-400 hover:text-white transition-colors" onClick={(e) => e.stopPropagation()}>
-                                        <MoreVertical className="w-4 h-4" />
+                                    <button
+                                        className="text-gray-400 hover:text-red-400 transition-colors p-1"
+                                        onClick={(e) => handleDeleteVideo(e, video.id)}
+                                        title="Delete Project"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
                                     </button>
                                 </div>
 

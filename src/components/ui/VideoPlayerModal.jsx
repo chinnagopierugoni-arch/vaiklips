@@ -16,8 +16,8 @@ export default function VideoPlayerModal({ video, isOpen, onClose }) {
     };
 
     const videoSrc = isYoutube
-        ? `https://www.youtube.com/embed/${getYoutubeId(video.title)}?autoplay=1`
-        : "https://assets.mixkit.co/videos/preview/mixkit-girl-in-neon-sign-1232-large.mp4"; // Placeholder for demo
+        ? (video.youtubeId ? `https://www.youtube.com/embed/${video.youtubeId}?autoplay=1` : `https://www.youtube.com/embed/${getYoutubeId(video.title)}?autoplay=1`)
+        : (video.videoSrc || "https://assets.mixkit.co/videos/preview/mixkit-girl-in-neon-sign-1232-large.mp4");
 
     return (
         <AnimatePresence>

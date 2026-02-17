@@ -94,7 +94,7 @@ export default function UploadPage() {
         title: fileData.name || "New Project",
         type: fileData.type === "youtube" ? "youtube" : "file",
         originalUrl: fileData.type === "youtube" ? fileData.name : null
-      });
+      }, user.uid);
       setVideoId(newVideo.id);
 
       // Simulate steps visualization while API is called

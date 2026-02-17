@@ -19,6 +19,13 @@ export default function VideoDetailsPage({ params }) {
     const [editingId, setEditingId] = useState(null);
     const [editTitle, setEditTitle] = useState("");
 
+    const getYoutubeId = (url) => {
+        if (!url) return null;
+        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+        const match = url.match(regExp);
+        return (match && match[2].length === 11) ? match[2] : null;
+    };
+
     useEffect(() => {
         const fetchVideo = async () => {
             try {
@@ -68,6 +75,23 @@ export default function VideoDetailsPage({ params }) {
         } catch (error) {
             console.error("Failed to update title", error);
         }
+    };
+
+    const handleShare = (short) => {
+        const url = window.location.href;
+        navigator.clipboard.writeText(url).then(() => {
+            alert("Project link copied to clipboard!");
+        });
+    };
+
+    const handleDownload = (short) => {
+        const videoUrl = video.originalUrl || '/placeholder-short.mp4';
+        const link = document.createElement('a');
+        link.href = videoUrl;
+        link.download = `${short.title || 'short'}.mp4`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     };
 
     if (loading) {
@@ -124,7 +148,12 @@ export default function VideoDetailsPage({ params }) {
                             >
                                 <div
                                     className="aspect-[9/16] bg-black/40 rounded-xl mb-4 relative overflow-hidden cursor-pointer group-inner"
-                                    onClick={() => setSelectedShort({ ...short, type: 'file', videoSrc: '/placeholder-short.mp4' })} // passing placeholder logic
+                                    onClick={() => setSelectedShort({
+                                        ...short,
+                                        type: video.type,
+                                        videoSrc: video.originalUrl || '/placeholder-short.mp4',
+                                        youtubeId: video.type === 'youtube' ? getYoutubeId(video.originalUrl) : null
+                                    })}
                                 >
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-60" />
 
@@ -161,10 +190,10 @@ export default function VideoDetailsPage({ params }) {
                                     <Button variant="ghost" className="h-10 px-0" onClick={() => startEditing(short)} title="Rename">
                                         <Edit2 className="w-4 h-4" />
                                     </Button>
-                                    <Button variant="ghost" className="h-10 px-0" onClick={() => { }} title="Download">
+                                    <Button variant="ghost" className="h-10 px-0" onClick={() => handleDownload(short)} title="Download">
                                         <Download className="w-4 h-4" />
                                     </Button>
-                                    <Button variant="ghost" className="h-10 px-0" onClick={() => { }} title="Share">
+                                    <Button variant="ghost" className="h-10 px-0" onClick={() => handleShare(short)} title="Share">
                                         <Share2 className="w-4 h-4" />
                                     </Button>
                                     <Button variant="ghost" className="h-10 px-0 text-red-400 hover:text-red-300 hover:bg-red-500/10" onClick={() => handleDeleteShort(short.id)} title="Delete">
