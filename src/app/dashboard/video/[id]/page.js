@@ -151,6 +151,7 @@ export default function VideoDetailsPage({ params }) {
                                     onClick={() => setSelectedShort({
                                         ...short,
                                         type: video.type,
+                                        originalUrl: video.originalUrl,
                                         videoSrc: video.originalUrl || '/placeholder-short.mp4',
                                         youtubeId: video.type === 'youtube' ? getYoutubeId(video.originalUrl) : null
                                     })}

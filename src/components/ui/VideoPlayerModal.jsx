@@ -12,12 +12,17 @@ export default function VideoPlayerModal({ video, isOpen, onClose }) {
         if (!url) return null;
         const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
         const match = url.match(regExp);
-        return (match && match[2].length === 11) ? match[2] : null;
+        if (match && match[2].length === 11) return match[2];
+
+        // Handle direct ID if passed
+        if (url.length === 11 && !url.includes("/") && !url.includes(".")) return url;
+
+        return null;
     };
 
     const videoSrc = isYoutube
-        ? (video.youtubeId ? `https://www.youtube.com/embed/${video.youtubeId}?autoplay=1` : `https://www.youtube.com/embed/${getYoutubeId(video.title)}?autoplay=1`)
-        : (video.videoSrc || "https://assets.mixkit.co/videos/preview/mixkit-girl-in-neon-sign-1232-large.mp4");
+        ? `https://www.youtube.com/embed/${video.youtubeId || getYoutubeId(video.originalUrl) || getYoutubeId(video.title)}?autoplay=1`
+        : (video.videoSrc || video.originalUrl || "https://assets.mixkit.co/videos/preview/mixkit-girl-in-neon-sign-1232-large.mp4");
 
     return (
         <AnimatePresence>
